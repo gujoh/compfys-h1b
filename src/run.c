@@ -19,8 +19,8 @@ run(
     // 100% of you code
     int n = 4;
     int n_atoms = 256;
-    double start = 3.9;
-    double end = 4.5;
+    double start = 4;
+    double end = 4.1;
     int linspace_len = 1000;
     double* lattice_params = (double*) malloc(sizeof(double) * linspace_len);
     get_linspace(lattice_params, start, end, linspace_len);
@@ -32,7 +32,7 @@ run(
         double lattice_param = lattice_params[i];
         init_fcc(positions, n, lattice_param);
         double e_pot = get_energy_AL(positions, n * lattice_param, n_atoms);
-        fprintf(file, "%f,%f\n", lattice_param, e_pot);
+        fprintf(file, "%f,%f\n", pow(lattice_param, 3), e_pot / pow(n, 3));
     }
     return 0;
 }
