@@ -3,4 +3,9 @@
 .vscode 
 __pycache__
 makefile
-/lib
+*
+!*.*
+!/**/
+/lib 
+/obj
+/obj_nep
