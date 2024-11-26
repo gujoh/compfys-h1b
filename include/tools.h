@@ -102,8 +102,7 @@ create_2D_array(
  * **********************************************/
 void
 destroy_2D_array(
-                 double **array,
-                 unsigned int n
+                 double **array
                 );
 
 
