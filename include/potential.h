@@ -41,3 +41,6 @@ double get_energy_AL(double **, double, int);
  *
  * ****************************************************************************/
 double get_virial_AL(double **, double, int);
+
+void calculate(double *potential, double *virial, double **force,
+           double **position, double cell_length, int nbr_atoms);

@@ -34,6 +34,15 @@ run(
         double e_pot = get_energy_AL(positions, n * lattice_param, n_atoms);
         fprintf(file, "%f,%f\n", pow(lattice_param, 3), e_pot / pow(n, 3));
     }
+
+    double** force = create_2D_array(n_atoms, 3);
+    positions = create_2D_array(n_atoms, 3);
+    double* potential = (double*) malloc(sizeof(double) * n_atoms);
+    double* virial = (double*) malloc(sizeof(double) * n_atoms);
+    init_fcc(positions, n, lattice_params[0]);
+    calculate(potential, virial, force, positions, n * lattice_params[0], n_atoms);
+    print_positions(positions, n_atoms);
+
     return 0;
 }
 
