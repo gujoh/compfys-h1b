@@ -84,8 +84,8 @@ void task2(void)
     double mass = 0.00279630417;
     double** positions = create_2D_array(n_atoms, 3);
     double** velocities = create_2D_array(n_atoms, 3);
-    double dt = 0.1;
-    double timesteps = 10000;
+    double dt = 1e-5;
+    double timesteps = 1000000;
     double potential = 0;
     double virial = 0;
     double lattice_param = 4.046;
