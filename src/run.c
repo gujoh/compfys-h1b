@@ -14,7 +14,7 @@ void velocity_verlet_one_step(double** positions, double** velocities, double** 
     double* kinetic, double* virial, double cell_length);
 void task1(void);
 void task2(void);
-double displacement_magnitude(void);
+gsl_rng* get_rand(void);
 
 int
 run(
@@ -100,10 +100,11 @@ void task2(void)
     double kinetic = 0;
     double lattice_param = 4.03;
     init_fcc(positions, n, lattice_param);
+    gsl_rng* r = get_rand();
     for (int i = 0; i < n_atoms; i++)
     {
-        double displacement = displacement_magnitude();
-        printf("%f\n", displacement);
+        double displacement = (gsl_rng_uniform(r) - 0.5) * 0.13;
+        //printf("%f\n", displacement);
         for (int j = 0; j < 3; j++)
         {
             positions[i][j] += positions[i][j] * displacement;
@@ -149,14 +150,13 @@ void velocity_verlet_one_step(double** positions, double** velocities, double** 
     }
 }
 
-double displacement_magnitude(void){
-    const gsl_rng_type * T;
-    gsl_rng * r;
+gsl_rng* get_rand(void){
+    const gsl_rng_type* T;
+    gsl_rng* r;
     gsl_rng_env_setup();
     T = gsl_rng_default;
     r = gsl_rng_alloc(T);
     time_t seed = time(NULL);
     gsl_rng_set(r, seed);
-    double u = (gsl_rng_uniform(r) - 0.5) * 0.13;
-    return u;
+    return r;
 }
