@@ -1,6 +1,5 @@
 *.o
 *.d
-.vscode 
 __pycache__
 makefile
 *
@@ -10,3 +9,4 @@ makefile
 /obj
 /obj_nep
 .venv
+.vscode 
