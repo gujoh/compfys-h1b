@@ -10,8 +10,8 @@
 void print_positions(double** positions, int n_atoms);
 void get_linspace(double* linspace, double start, double end, int n);
 void velocity_verlet_one_step(double** positions, double** velocities, double** force,
-    double mass, double dt, int n_atoms, double* potential,
-    double* kinetic, double* virial, double cell_length);
+    double mass, double dt, int n_atoms, double potential,
+    double* kinetic, double virial, double cell_length);
 void task1(void);
 void task2(void);
 gsl_rng* get_rand(void);
@@ -92,34 +92,36 @@ void task2(void)
     double dt;
     printf("dt: ");
     scanf("%lf", &dt);
-    double time = 25;
+    double time;
+    printf("max time: ");
+    scanf("%lf", &time);
     double timesteps = time / dt;
     char buffer[50];
     sprintf(buffer, "data/task2_%.1e.csv", dt);
     FILE* file = fopen(buffer, "w+");
     double potential = 0;
     double virial = 0;
-    double kinetic = 0;
     double lattice_param = 4.03;
     double k_b = 8.617333262e-5;
     init_fcc(positions, n, lattice_param);
     gsl_rng* r = get_rand();
     for (int i = 0; i < n_atoms; i++)
     { // Adding randomness to the initial positions. 
-        double displacement = (gsl_rng_uniform(r) - 0.5) * 0.13;
-        for (int j = 0; j < 3; j++)
-        {
-            positions[i][j] += positions[i][j] * displacement;
-        }
+        double displacement = (gsl_rng_uniform(r) - 0.5) * 0.13 * lattice_param;
+        addition_with_constant(positions[i], positions[i], displacement, 3);
+        // for (int j = 0; j < 3; j++)
+        // {
+        //     positions[i][j] += positions[i][j] * displacement;
+        // }
     }
 
     // Integrating the system.
     calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
     for (int t = 0; t < timesteps; t++)
     {
-        kinetic = 0;
+        double kinetic = 0;
         velocity_verlet_one_step(positions, velocities, force,
-            mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
+            mass, dt, n_atoms, potential, &kinetic, virial, n * lattice_param);
         double temperature = 2.0 / 3.0 / k_b / n * kinetic;
         // Potential, kinetic, temperature
         fprintf(file, "%f,%f,%f\n", potential, kinetic, temperature); 
@@ -133,8 +135,8 @@ void task2(void)
 
 // Computes one step of the Velocity verlet integration scheme. 
 void velocity_verlet_one_step(double** positions, double** velocities, double** force,
-    double mass, double dt, int n_atoms, double* potential,
-    double* kinetic, double* virial, double cell_length)
+    double mass, double dt, int n_atoms, double potential,
+    double* kinetic, double virial, double cell_length)
 {
     for (int i = 0; i < n_atoms; i++)
     {
@@ -144,7 +146,7 @@ void velocity_verlet_one_step(double** positions, double** velocities, double** 
             positions[i][j] += velocities[i][j] * dt;
         }
     }
-    calculate(potential, virial, force, positions, cell_length, n_atoms);
+    calculate(&potential, &virial, force, positions, cell_length, n_atoms);
     for (int i = 0; i < n_atoms; i++)
     {
         for (int j = 0; j < 3; j++)
