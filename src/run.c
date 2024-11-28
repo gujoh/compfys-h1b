@@ -32,7 +32,7 @@ run(
     //task1();
 
     // TASK 2
-    task2();
+    //task2();
 
     // TASK 3
     task3();
@@ -160,13 +160,17 @@ void task3(void)
     scanf("%lf", &time);
     double timesteps = time / dt;
     char buffer[50];
-    sprintf(buffer, "data/task2_%.1e.csv", dt);
+    sprintf(buffer, "data/task3_%.1e.csv", dt);
     FILE* file = fopen(buffer, "w+");
     double potential = 0;
     double virial = 0;
     double lattice_param = 4.03;
     double k_b = 8.617333262e-5; // Boltzmann constant 
     double volume = 64 * pow(lattice_param, 3);
+    double T_eq = 500 + 273.15;
+    double P_eq = 0.1;
+    double tau_T = 500 * dt;
+    double tau_P = 500 * dt;
     init_fcc(positions, n, lattice_param);
     gsl_rng* r = get_rand();
     for (int i = 0; i < n_atoms; i++)
@@ -186,6 +190,8 @@ void task3(void)
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
         double pressure = 1 / (3 * volume) * (kinetic + virial);
+        velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
+        pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt);
         
         // Potential, kinetic, temperature, pressure
         fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
