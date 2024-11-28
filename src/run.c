@@ -109,10 +109,6 @@ void task2(void)
     { // Adding randomness to the initial positions. 
         double displacement = (gsl_rng_uniform(r) - 0.5) * 0.13 * lattice_param;
         addition_with_constant(positions[i], positions[i], displacement, 3);
-        // for (int j = 0; j < 3; j++)
-        // {
-        //     positions[i][j] += positions[i][j] * displacement;
-        // }
     }
 
     // Integrating the system.
@@ -122,9 +118,13 @@ void task2(void)
         double kinetic = 0;
         velocity_verlet_one_step(positions, velocities, force,
             mass, dt, n_atoms, potential, &kinetic, virial, n * lattice_param);
-        double temperature = 2.0 / 3.0 / k_b / n_atoms * kinetic;
+        
+        // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
+        double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
+        
         // Potential, kinetic, temperature
         fprintf(file, "%f,%f,%f\n", potential, kinetic, temperature); 
+        
         if (t % 50 == 0)
         {
             printf("Progress: %.1f%%\n", (t / (float) timesteps) * 100);
@@ -142,7 +142,7 @@ void velocity_verlet_one_step(double** positions, double** velocities, double** 
     {
         for (int j = 0; j < 3; j++)
         {
-            velocities[i][j] += (force[i][j] / mass) * dt / 2;
+            velocities[i][j] += (force[i][j] / mass) * (dt / 2);
             positions[i][j] += velocities[i][j] * dt;
         }
     }
@@ -151,7 +151,7 @@ void velocity_verlet_one_step(double** positions, double** velocities, double** 
     {
         for (int j = 0; j < 3; j++)
         {
-            velocities[i][j] += (force[i][j] / mass) * dt / 2;
+            velocities[i][j] += (force[i][j] / mass) * (dt / 2);
         }
         double norm = vector_norm(velocities[i], 3);
         *kinetic += 0.5 * mass * norm * norm;
