@@ -122,7 +122,7 @@ void task2(void)
         double kinetic = 0;
         velocity_verlet_one_step(positions, velocities, force,
             mass, dt, n_atoms, potential, &kinetic, virial, n * lattice_param);
-        double temperature = 2.0 / 3.0 / k_b / n * kinetic;
+        double temperature = 2.0 / 3.0 / k_b / n_atoms * kinetic;
         // Potential, kinetic, temperature
         fprintf(file, "%f,%f,%f\n", potential, kinetic, temperature); 
         if (t % 50 == 0)
