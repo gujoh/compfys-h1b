@@ -189,7 +189,8 @@ void task3(void)
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
-        double pressure = 1 / (3 * volume) * (kinetic + virial);
+        //double pressure = 1 / (3 * volume) * (kinetic + virial);
+        double pressure = (n_atoms * k_b * temperature + virial) / volume;
         velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
         pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt);
         
