@@ -10,8 +10,8 @@
 void print_positions(double** positions, int n_atoms);
 void get_linspace(double* linspace, double start, double end, int n);
 void velocity_verlet_one_step(double** positions, double** velocities, double** force,
-    double mass, double dt, int n_atoms, double potential,
-    double* kinetic, double virial, double cell_length);
+    double mass, double dt, int n_atoms, double* potential,
+    double* kinetic, double* virial, double cell_length);
 void task1(void);
 void task2(void);
 gsl_rng* get_rand(void);
@@ -118,7 +118,7 @@ void task2(void)
     {
         double kinetic = 0;
         velocity_verlet_one_step(positions, velocities, force,
-            mass, dt, n_atoms, potential, &kinetic, virial, n * lattice_param);
+            mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
@@ -137,8 +137,8 @@ void task2(void)
 
 // Computes one step of the Velocity verlet integration scheme. 
 void velocity_verlet_one_step(double** positions, double** velocities, double** force,
-    double mass, double dt, int n_atoms, double potential,
-    double* kinetic, double virial, double cell_length)
+    double mass, double dt, int n_atoms, double* potential,
+    double* kinetic, double* virial, double cell_length)
 {
     for (int i = 0; i < n_atoms; i++)
     {
@@ -148,7 +148,7 @@ void velocity_verlet_one_step(double** positions, double** velocities, double** 
             positions[i][j] += velocities[i][j] * dt;
         }
     }
-    calculate(&potential, &virial, force, positions, cell_length, n_atoms);
+    calculate(potential, virial, force, positions, cell_length, n_atoms);
     for (int i = 0; i < n_atoms; i++)
     {
         for (int j = 0; j < 3; j++)
