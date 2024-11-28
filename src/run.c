@@ -6,6 +6,7 @@
 #include "tools.h"
 #include <gsl/gsl_rng.h>
 #include <time.h>
+#include "eqlib.h"
 
 void print_positions(double** positions, int n_atoms);
 void get_linspace(double* linspace, double start, double end, int n);
