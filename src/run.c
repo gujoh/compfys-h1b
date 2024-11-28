@@ -14,6 +14,7 @@ void velocity_verlet_one_step(double** positions, double** velocities, double** 
     double* kinetic, double* virial, double cell_length);
 void task1(void);
 void task2(void);
+void task3(void);
 gsl_rng* get_rand(void);
 
 int
@@ -32,7 +33,8 @@ run(
     // TASK 2
     task2();
 
-    //print_positions(positions, n_atoms);
+    // TASK 3
+    task3();
 
     return 0;
 }
@@ -77,6 +79,8 @@ void task1(void)
         double e_pot = get_energy_AL(positions, n * lattice_param, n_atoms);
         fprintf(file, "%f,%f\n", pow(lattice_param, 3), e_pot / pow(n, 3));
     }
+    free(lattice_params);
+    destroy_2D_array(positions);
     fclose(file);
 }
 
@@ -124,7 +128,7 @@ void task2(void)
         double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
         double pressure = 1 / (3 * volume) * (kinetic + virial);
         
-        // Potential, kinetic, temperature
+        // Potential, kinetic, temperature, pressure
         fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
         
         if (t % 50 == 0)
@@ -132,6 +136,67 @@ void task2(void)
             printf("Progress: %.1f%%\n", (t / (float) timesteps) * 100);
         }
     }
+    destroy_2D_array(positions);
+    destroy_2D_array(velocities);
+    destroy_2D_array(force);
+    fclose(file);
+}
+
+void task3(void)
+{
+    // Intitialization
+    int n = 4; 
+    int n_atoms = 256; 
+    double mass = 0.00279630417;
+    double** positions = create_2D_array(n_atoms, 3);
+    double** velocities = create_2D_array(n_atoms, 3);
+    double** force = create_2D_array(n_atoms, 3);
+    double dt;
+    printf("dt: ");
+    scanf("%lf", &dt);
+    double time;
+    printf("max time: ");
+    scanf("%lf", &time);
+    double timesteps = time / dt;
+    char buffer[50];
+    sprintf(buffer, "data/task2_%.1e.csv", dt);
+    FILE* file = fopen(buffer, "w+");
+    double potential = 0;
+    double virial = 0;
+    double lattice_param = 4.03;
+    double k_b = 8.617333262e-5; // Boltzmann constant 
+    double volume = 64 * pow(lattice_param, 3);
+    init_fcc(positions, n, lattice_param);
+    gsl_rng* r = get_rand();
+    for (int i = 0; i < n_atoms; i++)
+    { // Adding randomness to the initial positions. 
+        double displacement = (gsl_rng_uniform(r) - 0.5) * 0.13 * lattice_param;
+        addition_with_constant(positions[i], positions[i], displacement, 3);
+    }
+
+    // Integrating the system.
+    calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
+    for (int t = 0; t < timesteps; t++)
+    {
+        double kinetic = 0;
+        velocity_verlet_one_step(positions, velocities, force,
+            mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
+        
+        // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
+        double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
+        double pressure = 1 / (3 * volume) * (kinetic + virial);
+        
+        // Potential, kinetic, temperature, pressure
+        fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
+        
+        if (t % 50 == 0)
+        {
+            printf("Progress: %.1f%%\n", (t / (float) timesteps) * 100);
+        }
+    }
+    destroy_2D_array(positions);
+    destroy_2D_array(velocities);
+    destroy_2D_array(force);
     fclose(file);
 }
 
