@@ -6,6 +6,7 @@ velocity_eq_scaler(
                   double tau_T, 
                   double dt, 
                   double temperature, 
+                  double T_eq,
                   int n_atoms
                   );
 
@@ -15,5 +16,6 @@ pressure_eq_scaler(
                   double pressure, 
                   double tau_P, 
                   double P_eq, 
-                  int n_atoms
+                  int n_atoms,
+                  double dt
                   );
