@@ -102,7 +102,8 @@ void task2(void)
     double potential = 0;
     double virial = 0;
     double lattice_param = 4.03;
-    double k_b = 8.617333262e-5;
+    double k_b = 8.617333262e-5; // Boltzmann constant 
+    double volume = 64 * pow(lattice_param, 3);
     init_fcc(positions, n, lattice_param);
     gsl_rng* r = get_rand();
     for (int i = 0; i < n_atoms; i++)
@@ -121,9 +122,10 @@ void task2(void)
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
+        double pressure = 1 / (3 * volume) * (kinetic + virial);
         
         // Potential, kinetic, temperature
-        fprintf(file, "%f,%f,%f\n", potential, kinetic, temperature); 
+        fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
         
         if (t % 50 == 0)
         {
