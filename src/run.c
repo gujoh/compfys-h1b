@@ -183,18 +183,21 @@ void task3(void)
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
         double volume = 64 * pow(lattice_param, 3);
-        double pressure = (n_atoms * K_B * temperature) / volume + virial / (3 * volume);
+        //double pressure = ((n_atoms * K_B * temperature) / volume + virial / (3 * volume));
         //double pressure =  1 / (3 * 64 * pow(lattice_param, 3)) * (kinetic + virial) / 6.2415 * 1e6; 
+        double pressure = (n_atoms * K_B * virial * temperature * 1602000) / volume;
 
-        velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
-        pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt, &lattice_param);
-        
+        if (t < 10000)
+        {
+            velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
+            pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt, &lattice_param);
+        }
         // Potential, kinetic, temperature, pressure
         fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
         
         if (t % 50 == 0)
         {
-            printf("Progress: %.1f%%, a = %f\n", (t / (float) timesteps) * 100, lattice_param);
+            printf("Progress: %.1f%%, a = %f, p = %f, temp = %f\n", (t / (float) timesteps) * 100, lattice_param, pressure, temperature);
         }
     }
     destroy_2D_array(positions);
