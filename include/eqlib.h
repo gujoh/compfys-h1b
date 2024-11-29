@@ -17,5 +17,6 @@ pressure_eq_scaler(
                   double tau_P, 
                   double P_eq, 
                   int n_atoms,
-                  double dt
+                  double dt,
+                  double* lattice_param
                   );

@@ -166,11 +166,10 @@ void task3(void)
     double virial = 0;
     double lattice_param = 4.03;
     double k_b = 8.617333262e-5; // Boltzmann constant 
-    double volume = 64 * pow(lattice_param, 3);
     double T_eq = 500 + 273.15;
     double P_eq = 0.1;
     double tau_T = 500 * dt;
-    double tau_P = 500 * dt;
+    double tau_P = 1000 * dt;
     init_fcc(positions, n, lattice_param);
     gsl_rng* r = get_rand();
     for (int i = 0; i < n_atoms; i++)
@@ -183,6 +182,7 @@ void task3(void)
     calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
     for (int t = 0; t < timesteps; t++)
     {
+        double volume = 64 * pow(lattice_param, 3);
         double kinetic = 0;
         velocity_verlet_one_step(positions, velocities, force,
             mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
@@ -194,14 +194,14 @@ void task3(void)
         double pressure = (n_atoms * k_b * temperature) / volume + virial / (3 * volume);
         
         velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
-        pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt);
+        pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt, &lattice_param);
         
         // Potential, kinetic, temperature, pressure
         fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
         
         if (t % 50 == 0)
         {
-            printf("Progress: %.1f%%\n", (t / (float) timesteps) * 100);
+            printf("Progress: %.1f%%, a = %f\n", (t / (float) timesteps) * 100, lattice_param);
         }
     }
     destroy_2D_array(positions);
