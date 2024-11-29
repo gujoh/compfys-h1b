@@ -8,6 +8,8 @@
 #include <time.h>
 #include "eqlib.h"
 
+#define K_B  8.617333262e-5 // Boltzmann constant 
+
 void print_positions(double** positions, int n_atoms);
 void get_linspace(double* linspace, double start, double end, int n);
 void velocity_verlet_one_step(double** positions, double** velocities, double** force,
@@ -17,6 +19,7 @@ void task1(void);
 void task2(void);
 void task3(void);
 gsl_rng* get_rand(void);
+void rand_fcc(double** positions, double lattice_param, int n_atoms);
 
 int
 run(
@@ -24,17 +27,11 @@ run(
     char *argv[]
    )
 {
-    // Write your code here
-    // This makes it possible to test
-    // 100% of you code
 
-    // TASK 1
     //task1();
 
-    // TASK 2
     //task2();
 
-    // TASK 3
     task3();
 
     return 0;
@@ -59,6 +56,15 @@ void get_linspace(double* linspace, double start, double end, int n)
     {
         linspace[i] = start + i * increment;
     }
+}
+
+void get_dt_time_timestep(double* dt, double* time, double* timestep){
+
+    printf("dt: ");
+    scanf("%lf", dt);
+    printf("max time: ");
+    scanf("%lf", time);
+    *timestep = *time / *dt;
 }
 
 void task1(void)
@@ -87,35 +93,29 @@ void task1(void)
 
 void task2(void)
 {
-    // Intitialization
+
     int n = 4; 
     int n_atoms = 256; 
     double mass = 0.00279630417;
+    
     double** positions = create_2D_array(n_atoms, 3);
     double** velocities = create_2D_array(n_atoms, 3);
     double** force = create_2D_array(n_atoms, 3);
-    double dt;
-    printf("dt: ");
-    scanf("%lf", &dt);
-    double time;
-    printf("max time: ");
-    scanf("%lf", &time);
-    double timesteps = time / dt;
+    
+    double dt, time, timesteps;
+    get_dt_time_timestep(&dt, &time, &timesteps);
+
     char buffer[50];
     sprintf(buffer, "data/task2_%.1e.csv", dt);
     FILE* file = fopen(buffer, "w+");
+
     double potential = 0;
     double virial = 0;
     double lattice_param = 4.03;
-    double k_b = 8.617333262e-5; // Boltzmann constant 
     double volume = 64 * pow(lattice_param, 3);
+
     init_fcc(positions, n, lattice_param);
-    gsl_rng* r = get_rand();
-    for (int i = 0; i < n_atoms; i++)
-    { // Adding randomness to the initial positions. 
-        double displacement = (gsl_rng_uniform(r) - 0.5) * 0.13 * lattice_param;
-        addition_with_constant(positions[i], positions[i], displacement, 3);
-    }
+    rand_fcc(positions, n_atoms, lattice_param);
 
     // Integrating the system.
     calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
@@ -126,7 +126,7 @@ void task2(void)
             mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
-        double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
+        double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
         double pressure = 1 / (3 * volume) * (kinetic + virial);
         
         // Potential, kinetic, temperature, pressure
@@ -145,38 +145,34 @@ void task2(void)
 
 void task3(void)
 {
-    // Intitialization
     int n = 4; 
     int n_atoms = 256; 
     double mass = 0.00279630417;
+
     double** positions = create_2D_array(n_atoms, 3);
     double** velocities = create_2D_array(n_atoms, 3);
     double** force = create_2D_array(n_atoms, 3);
-    double dt;
-    printf("dt: ");
-    scanf("%lf", &dt);
-    double time;
-    printf("max time: ");
-    scanf("%lf", &time);
-    double timesteps = time / dt;
+
+    double dt, time, timesteps;
+    get_dt_time_timestep(&dt, &time, &timesteps);
+
     char buffer[50];
+    
     sprintf(buffer, "data/task3_%.1e.csv", dt);
     FILE* file = fopen(buffer, "w+");
+    
     double potential = 0;
     double virial = 0;
-    double lattice_param = 4.03;
-    double k_b = 8.617333262e-5; // Boltzmann constant 
+    double lattice_param = 4.03; 
+    
     double T_eq = 500 + 273.15;
     double P_eq = 0.1;
+    
     double tau_T = 500 * dt;
     double tau_P = 1000 * dt;
-    init_fcc(positions, n, lattice_param);
-    gsl_rng* r = get_rand();
-    for (int i = 0; i < n_atoms; i++)
-    { // Adding randomness to the initial positions. 
-        double displacement = (gsl_rng_uniform(r) - 0.5) * 0.13 * lattice_param;
-        addition_with_constant(positions[i], positions[i], displacement, 3);
-    }
+    
+    init_fcc(positions, n, lattice_param); 
+    rand_fcc(positions, n_atoms, lattice_param);
 
     // Integrating the system.
     calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
@@ -188,10 +184,10 @@ void task3(void)
             mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
-        double temperature = 2.0 / (3.0 * k_b * n_atoms) * kinetic;
+        double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
         //double pressure = 1 / (3 * volume) * (kinetic + virial);
-       // double pressure = (n_atoms * k_b * temperature + virial) / volume;
-        double pressure = (n_atoms * k_b * temperature) / volume + virial / (3 * volume);
+       // double pressure = (n_atoms * K_B * temperature + virial) / volume;
+        double pressure = (n_atoms * K_B * temperature) / volume + virial / (3 * volume);
         
         velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
         pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt, &lattice_param);
@@ -245,4 +241,14 @@ gsl_rng* get_rand(void){
     time_t seed = time(NULL);
     gsl_rng_set(r, seed);
     return r;
+}
+
+void rand_fcc(double** positions, double lattice_param, int n_atoms){ 
+    gsl_rng* r = get_rand();
+
+    for (int i = 0; i < n_atoms; i++)
+    { // Adding randomness to the initial positions. 
+        double displacement = (gsl_rng_uniform(r) - 0.5) * 0.13 * lattice_param;
+        addition_with_constant(positions[i], positions[i], displacement, 3);
+    }
 }
