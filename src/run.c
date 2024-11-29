@@ -112,10 +112,9 @@ void task2(void)
     double potential = 0;
     double virial = 0;
     double lattice_param = 4.03;
-    double volume = 64 * pow(lattice_param, 3);
 
     init_fcc(positions, n, lattice_param);
-    rand_fcc(positions, n_atoms, lattice_param);
+    rand_fcc(positions, lattice_param, n_atoms);
 
     // Integrating the system.
     calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
@@ -127,10 +126,9 @@ void task2(void)
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
-        double pressure = 1 / (3 * volume) * (kinetic + virial);
         
         // Potential, kinetic, temperature, pressure
-        fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
+        fprintf(file, "%f,%f,%f\n", potential, kinetic, temperature); 
         
         if (t % 50 == 0)
         {
@@ -163,32 +161,31 @@ void task3(void)
     
     double potential = 0;
     double virial = 0;
-    double lattice_param = 4.03; 
+    double lattice_param = 4.046; 
     
     double T_eq = 500 + 273.15;
     double P_eq = 0.1;
     
     double tau_T = 500 * dt;
-    double tau_P = 1000 * dt;
+    double tau_P = 500 * dt;
     
     init_fcc(positions, n, lattice_param); 
-    rand_fcc(positions, n_atoms, lattice_param);
+    rand_fcc(positions, lattice_param, n_atoms);
 
     // Integrating the system.
     calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
     for (int t = 0; t < timesteps; t++)
     {
-        double volume = 64 * pow(lattice_param, 3);
         double kinetic = 0;
         velocity_verlet_one_step(positions, velocities, force,
             mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
-        //double pressure = 1 / (3 * volume) * (kinetic + virial);
-       // double pressure = (n_atoms * K_B * temperature + virial) / volume;
+        double volume = 64 * pow(lattice_param, 3);
         double pressure = (n_atoms * K_B * temperature) / volume + virial / (3 * volume);
-        
+        //double pressure =  1 / (3 * 64 * pow(lattice_param, 3)) * (kinetic + virial) / 6.2415 * 1e6; 
+
         velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
         pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt, &lattice_param);
         
