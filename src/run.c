@@ -164,7 +164,7 @@ void task3(void)
     double lattice_param = 4.046; 
     
     double T_eq = 500 + 273.15;
-    double P_eq = 0.1;
+    double P_eq = 0.1; //0.00000624 or 0.0001 / (1.602176634e-19 / (10e-10)^3) = 6.241509074e-13?????
     
     double tau_T = 500 * dt;
     double tau_P = 500 * dt;
@@ -185,7 +185,8 @@ void task3(void)
         double volume = 64 * pow(lattice_param, 3);
         //double pressure = ((n_atoms * K_B * temperature) / volume + virial / (3 * volume));
         //double pressure =  1 / (3 * 64 * pow(lattice_param, 3)) * (kinetic + virial) / 6.2415 * 1e6; 
-        double pressure = (n_atoms * K_B * virial * temperature * 1602000) / volume;
+        //double pressure = (n_atoms * K_B * virial * 1602000) / volume;
+        double pressure = (n_atoms * K_B * temperature + virial) / volume;
 
         if (t < 10000)
         {
