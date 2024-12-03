@@ -13,10 +13,13 @@ velocity_eq_scaler(
 void 
 pressure_eq_scaler(
                   double** positions, 
-                  double pressure, 
-                  double tau_P, 
-                  double P_eq, 
-                  int n_atoms,
-                  double dt,
-                  double* lattice_param
+                  double alpha_P_cube_root,
+                  int n_atoms
                   );
+
+double get_alpha_P_cube_root(
+                            double pressure, 
+                            double tau_P,
+                            double P_eq, 
+                            double dt
+                            );

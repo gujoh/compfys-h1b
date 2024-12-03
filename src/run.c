@@ -9,6 +9,8 @@
 #include "eqlib.h"
 
 #define K_B  8.617333262e-5 // Boltzmann constant 
+#define GPA_TO_BAR 10000 //GPa to bar
+#define BAR_TO_EV_A3 0.00000624 // Bar to eV/Å^3
 
 void print_positions(double** positions, int n_atoms);
 void get_linspace(double* linspace, double start, double end, int n);
@@ -164,10 +166,9 @@ void task3(void)
     double lattice_param = 4.046; 
     
     double T_eq = 500 + 273.15;
-    double P_eq = 0.1; //0.00000624 or 0.0001 / (1.602176634e-19 / (10e-10)^3) = 6.241509074e-13?????
-    
-    double tau_T = 500 * dt;
-    double tau_P = 500 * dt;
+    double P_eq = 1 * BAR_TO_EV_A3;
+    double tau_T = 300 * dt;
+    double tau_P = 400 * dt;
     
     init_fcc(positions, n, lattice_param); 
     rand_fcc(positions, lattice_param, n_atoms);
@@ -182,16 +183,15 @@ void task3(void)
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
-        double volume = 64 * pow(lattice_param, 3);
-        //double pressure = ((n_atoms * K_B * temperature) / volume + virial / (3 * volume));
-        //double pressure =  1 / (3 * 64 * pow(lattice_param, 3)) * (kinetic + virial) / 6.2415 * 1e6; 
-        //double pressure = (n_atoms * K_B * virial * 1602000) / volume;
+        double volume = n_atoms * pow(lattice_param, 3); 
         double pressure = (n_atoms * K_B * temperature + virial) / volume;
 
+        double alpha_P_cube_root = get_alpha_P_cube_root(pressure, tau_P, P_eq, dt);
+        lattice_param *= alpha_P_cube_root;
         if (t < 10000)
         {
             velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
-            pressure_eq_scaler(positions, pressure, tau_P, P_eq, n_atoms, dt, &lattice_param);
+            pressure_eq_scaler(positions, alpha_P_cube_root, n_atoms);
         }
         // Potential, kinetic, temperature, pressure
         fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
