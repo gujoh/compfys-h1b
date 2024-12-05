@@ -113,7 +113,7 @@ void task2(void)
 
     double potential = 0;
     double virial = 0;
-    double lattice_param = 4.03;
+    double lattice_param = 4.046;
 
     init_fcc(positions, n, lattice_param);
     rand_fcc(positions, lattice_param, n_atoms);
@@ -158,17 +158,18 @@ void task3(void)
 
     char buffer[50];
     
-    sprintf(buffer, "data/task3_%.1e.csv", dt);
+    sprintf(buffer, "data/task4_%.1e.csv", dt);
     FILE* file = fopen(buffer, "w+");
     
     double potential = 0;
     double virial = 0;
     double lattice_param = 4.046; 
     
-    double T_eq = 500 + 273.15;
+    double T_eq = 1000 + 273.15;
     double P_eq = 1 * BAR_TO_EV_A3;
     double tau_T = 300 * dt;
     double tau_P = 400 * dt;
+    int equib_time = 10000;
     
     init_fcc(positions, n, lattice_param); 
     rand_fcc(positions, lattice_param, n_atoms);
@@ -188,13 +189,18 @@ void task3(void)
 
         double alpha_P_cube_root = get_alpha_P_cube_root(pressure, tau_P, P_eq, dt);
         lattice_param *= alpha_P_cube_root;
-        if (t < 10000)
+        if (t < equib_time)
         {
             velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
             pressure_eq_scaler(positions, alpha_P_cube_root, n_atoms);
         }
-        // Potential, kinetic, temperature, pressure
-        fprintf(file, "%f,%f,%f,%f\n", potential, kinetic, temperature, pressure); 
+        // Potential, kinetic, temperature, pressure, lattice constant, positions
+        fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", potential,
+         kinetic, temperature, pressure, lattice_param, 
+         positions[60][0], positions[60][1], positions[60][2],
+         positions[75][0], positions[75][1], positions[75][2], 
+         positions[110][0], positions[110][1], positions[110][2],
+         positions[125][0], positions[125][1], positions[125][2]); 
         
         if (t % 50 == 0)
         {
