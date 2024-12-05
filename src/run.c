@@ -370,6 +370,7 @@ static inline double get_msd(double prev_positions[50][256][3], double** positio
     {
         for (int j = 0; j < n_prev_positions - 1; j++)
         {
+            // TODO: prev_positions[0][i] instead of positions[i]?? 
             double delta = distance_between_vectors(positions[i], prev_positions[j][i], 3);
             msd += delta * delta;
         }
