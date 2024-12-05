@@ -15,10 +15,10 @@
 
 void print_positions(double** positions, int n_atoms);
 void get_linspace(double* linspace, double start, double end, int n);
-void velocity_verlet_one_step(double** positions, double** velocities, double** force,
+static inline void velocity_verlet_one_step(double** positions, double** velocities, double** force,
     double mass, double dt, int n_atoms, double* potential,
     double* kinetic, double* virial, double cell_length);
-double get_msd(double prev_positions[50][256][3], double** positions, int n_atoms, int n_prev_positions);
+static inline double get_msd(double prev_positions[50][256][3], double** positions, int n_atoms, int n_prev_positions);
 void task1(void);
 void task2(void);
 void task3(void);
@@ -37,9 +37,9 @@ run(
 
     //task2();
 
-    task3();
+    //task3();
 
-    //task4();
+    task4();
 
     return 0;
 }
@@ -160,6 +160,9 @@ void task3(void)
     double** force = create_2D_array(n_atoms, 3);
     double prev_positions[n_prev_positions][n_atoms][3];
     memset(prev_positions, 0, sizeof(double) * n_prev_positions * n_atoms * 3);
+    double prev_velocities[n_prev_positions][n_atoms][3];
+    memset(prev_velocities, 0, sizeof(double) * n_prev_positions * n_atoms * 3);
+
 
     double dt, time, timesteps;
     get_dt_time_timestep(&dt, &time, &timesteps);
@@ -191,7 +194,9 @@ void task3(void)
             mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
         
         double msd = get_msd(prev_positions, positions, n_atoms, n_prev_positions);
+        double velcor = get_msd(prev_velocities, velocities, n_atoms, n_prev_positions);
         memcpy(prev_positions[t % n_prev_positions], positions, n_atoms * 3);
+        memcpy(prev_velocities[t % n_prev_positions], velocities, n_atoms * 3);
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
@@ -206,13 +211,13 @@ void task3(void)
             pressure_eq_scaler(positions, alpha_P_cube_root, n_atoms);
         }
         // Potential, kinetic, temperature, pressure, lattice constant, positions
-        fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", potential,
+        fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", potential,
          kinetic, temperature, pressure, lattice_param, 
          positions[60][0], positions[60][1], positions[60][2],
          positions[75][0], positions[75][1], positions[75][2], 
          positions[110][0], positions[110][1], positions[110][2],
          positions[125][0], positions[125][1], positions[125][2],
-         msd); 
+         msd, velcor); 
         
         if (t % 50 == 0)
         {
@@ -237,6 +242,8 @@ void task4(void)
     double** force = create_2D_array(n_atoms, 3);
     double prev_positions[n_prev_positions][n_atoms][3];
     memset(prev_positions, 0, sizeof(double) * n_prev_positions * n_atoms * 3);
+    double prev_velocities[n_prev_positions][n_atoms][3];
+    memset(prev_velocities, 0, sizeof(double) * n_prev_positions * n_atoms * 3);
 
     double dt, time, timesteps;
     get_dt_time_timestep(&dt, &time, &timesteps);
@@ -255,7 +262,7 @@ void task4(void)
     double tau_T = 300 * dt;
     double tau_P = 400 * dt;
     int equib_time = 10000;
-    int equib_time2 = 15000;
+    int equib_time2 = 20000;
     
     init_fcc(positions, n, lattice_param); 
     rand_fcc(positions, lattice_param, n_atoms);
@@ -269,7 +276,9 @@ void task4(void)
             mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
 
         double msd = get_msd(prev_positions, positions, n_atoms, n_prev_positions);
+        double velcor = get_msd(prev_velocities, velocities, n_atoms, n_prev_positions);
         memcpy(prev_positions[t % n_prev_positions], positions, n_atoms * 3);
+        memcpy(prev_velocities[t % n_prev_positions], velocities, n_atoms * 3);
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
@@ -288,13 +297,13 @@ void task4(void)
             pressure_eq_scaler(positions, alpha_P_cube_root, n_atoms);
         }
         // Potential, kinetic, temperature, pressure, lattice constant, positions
-        fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", potential,
+        fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", potential,
          kinetic, temperature, pressure, lattice_param, 
          positions[60][0], positions[60][1], positions[60][2],
          positions[75][0], positions[75][1], positions[75][2], 
          positions[110][0], positions[110][1], positions[110][2],
          positions[125][0], positions[125][1], positions[125][2],
-         msd); 
+         msd, velcor); 
         
         if (t % 50 == 0)
         {
@@ -308,7 +317,7 @@ void task4(void)
 }
 
 // Computes one step of the Velocity verlet integration scheme. 
-void velocity_verlet_one_step(double** positions, double** velocities, double** force,
+static inline void velocity_verlet_one_step(double** positions, double** velocities, double** force,
     double mass, double dt, int n_atoms, double* potential,
     double* kinetic, double* virial, double cell_length)
 {
@@ -354,7 +363,7 @@ void rand_fcc(double** positions, double lattice_param, int n_atoms){
     }
 }
 
-double get_msd(double prev_positions[50][256][3], double** positions, int n_atoms, int n_prev_positions)
+static inline double get_msd(double prev_positions[50][256][3], double** positions, int n_atoms, int n_prev_positions)
 {
     double msd = 0; 
     for (int i = 0; i < n_atoms; i++)
