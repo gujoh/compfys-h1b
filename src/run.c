@@ -20,6 +20,7 @@ void velocity_verlet_one_step(double** positions, double** velocities, double** 
 void task1(void);
 void task2(void);
 void task3(void);
+void task4(void);
 gsl_rng* get_rand(void);
 void rand_fcc(double** positions, double lattice_param, int n_atoms);
 
@@ -34,7 +35,9 @@ run(
 
     //task2();
 
-    task3();
+    //task3();
+
+    task4();
 
     return 0;
 }
@@ -158,14 +161,14 @@ void task3(void)
 
     char buffer[50];
     
-    sprintf(buffer, "data/task4_%.1e.csv", dt);
+    sprintf(buffer, "data/task3_%.1e.csv", dt);
     FILE* file = fopen(buffer, "w+");
     
     double potential = 0;
     double virial = 0;
     double lattice_param = 4.046; 
     
-    double T_eq = 1000 + 273.15;
+    double T_eq = 500 + 273.15;
     double P_eq = 1 * BAR_TO_EV_A3;
     double tau_T = 300 * dt;
     double tau_P = 400 * dt;
@@ -190,6 +193,81 @@ void task3(void)
         double alpha_P_cube_root = get_alpha_P_cube_root(pressure, tau_P, P_eq, dt);
         lattice_param *= alpha_P_cube_root;
         if (t < equib_time)
+        {
+            velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
+            pressure_eq_scaler(positions, alpha_P_cube_root, n_atoms);
+        }
+        // Potential, kinetic, temperature, pressure, lattice constant, positions
+        fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n", potential,
+         kinetic, temperature, pressure, lattice_param, 
+         positions[60][0], positions[60][1], positions[60][2],
+         positions[75][0], positions[75][1], positions[75][2], 
+         positions[110][0], positions[110][1], positions[110][2],
+         positions[125][0], positions[125][1], positions[125][2]); 
+        
+        if (t % 50 == 0)
+        {
+            printf("Progress: %.1f%%, a = %f, p = %f, temp = %f\n", (t / (float) timesteps) * 100, lattice_param, pressure, temperature);
+        }
+    }
+    destroy_2D_array(positions);
+    destroy_2D_array(velocities);
+    destroy_2D_array(force);
+    fclose(file);
+}
+
+void task4(void)
+{
+    int n = 4; 
+    int n_atoms = 256; 
+    double mass = 0.00279630417;
+
+    double** positions = create_2D_array(n_atoms, 3);
+    double** velocities = create_2D_array(n_atoms, 3);
+    double** force = create_2D_array(n_atoms, 3);
+
+    double dt, time, timesteps;
+    get_dt_time_timestep(&dt, &time, &timesteps);
+
+    char buffer[50];
+    
+    sprintf(buffer, "data/task4_%.1e.csv", dt);
+    FILE* file = fopen(buffer, "w+");
+    
+    double potential = 0;
+    double virial = 0;
+    double lattice_param = 4.046; 
+    
+    double T_eq = 1000 + 273.15;
+    double P_eq = 1 * BAR_TO_EV_A3;
+    double tau_T = 300 * dt;
+    double tau_P = 400 * dt;
+    int equib_time = 5000;
+    int equib_time2 = 10000;
+    
+    init_fcc(positions, n, lattice_param); 
+    rand_fcc(positions, lattice_param, n_atoms);
+
+    // Integrating the system.
+    calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
+    for (int t = 0; t < timesteps; t++)
+    {
+        double kinetic = 0;
+        velocity_verlet_one_step(positions, velocities, force,
+            mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
+        
+        // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
+        double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
+        double volume = n_atoms * pow(lattice_param, 3); 
+        double pressure = (n_atoms * K_B * temperature + virial) / volume;
+
+        double alpha_P_cube_root = get_alpha_P_cube_root(pressure, tau_P, P_eq, dt);
+        lattice_param *= alpha_P_cube_root;
+        if (t > equib_time)
+        {
+            T_eq = 700 + 273.15;
+        }
+        if (t < equib_time2)
         {
             velocity_eq_scaler(velocities, tau_T, dt, temperature, T_eq, n_atoms);
             pressure_eq_scaler(positions, alpha_P_cube_root, n_atoms);
