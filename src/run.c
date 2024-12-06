@@ -18,7 +18,8 @@ void get_linspace(double* linspace, double start, double end, int n);
 static inline void velocity_verlet_one_step(double** positions, double** velocities, double** force,
     double mass, double dt, int n_atoms, double* potential,
     double* kinetic, double* virial, double cell_length);
-static inline double get_msd(double prev_positions[50][256][3], double** positions, int n_atoms, int n_prev_positions);
+static inline double get_msd(double prev_positions[256][3], double** positions, int n_atoms);
+static inline double get_velcor(double prev_velocities[256][3], double** velocities, int n_atoms);
 void task1(void);
 void task2(void);
 void task3(void);
@@ -37,9 +38,9 @@ run(
 
     //task2();
 
-    //task3();
+    task3();
 
-    task4();
+    //task4();
 
     return 0;
 }
@@ -154,7 +155,7 @@ void task3(void)
     int n_atoms = 256; 
     double mass = 0.00279630417;
 
-    int n_prev_positions = 50;
+    int n_prev_positions = 100;
     double** positions = create_2D_array(n_atoms, 3);
     double** velocities = create_2D_array(n_atoms, 3);
     double** force = create_2D_array(n_atoms, 3);
@@ -162,7 +163,6 @@ void task3(void)
     memset(prev_positions, 0, sizeof(double) * n_prev_positions * n_atoms * 3);
     double prev_velocities[n_prev_positions][n_atoms][3];
     memset(prev_velocities, 0, sizeof(double) * n_prev_positions * n_atoms * 3);
-
 
     double dt, time, timesteps;
     get_dt_time_timestep(&dt, &time, &timesteps);
@@ -184,6 +184,7 @@ void task3(void)
     
     init_fcc(positions, n, lattice_param); 
     rand_fcc(positions, lattice_param, n_atoms);
+    memcpy(&prev_positions[0], &positions[0][0], n_atoms * 3 * sizeof(double));
 
     // Integrating the system.
     calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
@@ -193,15 +194,16 @@ void task3(void)
         velocity_verlet_one_step(positions, velocities, force,
             mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
         
-        double msd = get_msd(prev_positions, positions, n_atoms, n_prev_positions);
-        double velcor = get_msd(prev_velocities, velocities, n_atoms, n_prev_positions);
-        memcpy(prev_positions[t % n_prev_positions], positions, n_atoms * 3);
-        memcpy(prev_velocities[t % n_prev_positions], velocities, n_atoms * 3);
-        
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
         double volume = n_atoms * pow(lattice_param, 3); 
         double pressure = (n_atoms * K_B * temperature + virial) / volume;
+
+        int t_index = t > n_prev_positions ? t % n_prev_positions : 0;
+        double msd = get_msd(prev_positions[t_index], positions, n_atoms);
+        double velcor = get_velcor(prev_velocities[t_index], velocities, n_atoms) /  (3 * K_B * temperature / mass);
+        memcpy(&prev_positions[t % n_prev_positions], &positions[0][0], n_atoms * 3 * sizeof(double));
+        memcpy(&prev_velocities[t % n_prev_positions], &velocities[0][0], n_atoms * 3 * sizeof(double));
 
         double alpha_P_cube_root = get_alpha_P_cube_root(pressure, tau_P, P_eq, dt);
         lattice_param *= alpha_P_cube_root;
@@ -236,7 +238,7 @@ void task4(void)
     int n_atoms = 256; 
     double mass = 0.00279630417;
 
-    int n_prev_positions = 50;
+    int n_prev_positions = 100;
     double** positions = create_2D_array(n_atoms, 3);
     double** velocities = create_2D_array(n_atoms, 3);
     double** force = create_2D_array(n_atoms, 3);
@@ -266,6 +268,7 @@ void task4(void)
     
     init_fcc(positions, n, lattice_param); 
     rand_fcc(positions, lattice_param, n_atoms);
+    memcpy(&prev_positions[0], &positions[0][0], n_atoms * 3 * sizeof(double));
 
     // Integrating the system.
     calculate(&potential, &virial, force, positions, n * lattice_param, n_atoms);
@@ -274,16 +277,17 @@ void task4(void)
         double kinetic = 0;
         velocity_verlet_one_step(positions, velocities, force,
             mass, dt, n_atoms, &potential, &kinetic, &virial, n * lattice_param);
-
-        double msd = get_msd(prev_positions, positions, n_atoms, n_prev_positions);
-        double velcor = get_msd(prev_velocities, velocities, n_atoms, n_prev_positions);
-        memcpy(prev_positions[t % n_prev_positions], positions, n_atoms * 3);
-        memcpy(prev_velocities[t % n_prev_positions], velocities, n_atoms * 3);
         
         // T(t) = \frac{2}{3Nk_b}sum\limits_{i=1}^N \frac{p_i^2(t)}{2m_i}
         double temperature = 2.0 / (3.0 * K_B * n_atoms) * kinetic;
         double volume = n_atoms * pow(lattice_param, 3); 
         double pressure = (n_atoms * K_B * temperature + virial) / volume;
+
+        int t_index = t > n_prev_positions ? t % n_prev_positions : 0;
+        double msd = get_msd(prev_positions[t_index], positions, n_atoms);
+        double velcor = get_velcor(prev_velocities[t_index], velocities, n_atoms) / (3 * K_B * temperature / mass);
+        memcpy(&prev_positions[t % n_prev_positions], &positions[0][0], n_atoms * 3 * sizeof(double));
+        memcpy(&prev_velocities[t % n_prev_positions], &velocities[0][0], n_atoms * 3 * sizeof(double));
 
         double alpha_P_cube_root = get_alpha_P_cube_root(pressure, tau_P, P_eq, dt);
         lattice_param *= alpha_P_cube_root;
@@ -363,17 +367,29 @@ void rand_fcc(double** positions, double lattice_param, int n_atoms){
     }
 }
 
-static inline double get_msd(double prev_positions[50][256][3], double** positions, int n_atoms, int n_prev_positions)
+static inline double get_msd(double prev_positions[256][3], double** positions, int n_atoms)
 {
     double msd = 0; 
     for (int i = 0; i < n_atoms; i++)
     {
-        for (int j = 0; j < n_prev_positions - 1; j++)
-        {
-            // TODO: prev_positions[0][i] instead of positions[i]?? 
-            double delta = distance_between_vectors(positions[i], prev_positions[j][i], 3);
-            msd += delta * delta;
-        }
+        // for (int j = 0; j < n_prev_positions - 1; j++)
+        // {
+        //     double delta = distance_between_vectors(positions[i], prev_positions[j][i], 3);
+        //     msd += delta * delta;
+        // }
+        double delta = distance_between_vectors(positions[i], prev_positions[i], 3);
+        msd += delta * delta; 
     }
-    return msd / n_atoms / n_prev_positions;
+    return msd / n_atoms;// / n_prev_positions;
 }
+
+static inline double get_velcor(double prev_velocities[256][3], double** velocities, int n_atoms)
+{
+    double velcor = 0;
+    for (int i = 0; i < n_atoms; i++)
+    {
+        velcor += dot_product(velocities[i], prev_velocities[i], 3);
+    }
+    return velcor / n_atoms;
+}
+
