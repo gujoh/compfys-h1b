@@ -24,6 +24,6 @@ double get_alpha_P_cube_root(double pressure, double tau_P, double P_eq, double 
 {
 	// https://matmake.com/materials-data/aluminum-properties.html
 	// Converted from 75.2 GPa to ev/Å^3
-	double kappa_T = 4.69; 
+	double kappa_T = 1 / 4.69; 
 	return pow(1 - kappa_T * (dt/tau_P)*(P_eq - pressure), 1./3.);
 }

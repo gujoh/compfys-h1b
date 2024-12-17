@@ -171,6 +171,8 @@ void task3(void)
     
     sprintf(buffer, "data/task3_%.1e.csv", dt);
     FILE* file = fopen(buffer, "w+");
+    FILE* position_file = fopen("data/task3_positions.csv", "w+");
+    FILE* velocity_file = fopen("data/task3_velocity.csv", "w+");
     
     double potential = 0;
     double virial = 0;
@@ -180,7 +182,7 @@ void task3(void)
     double P_eq = 1 * BAR_TO_EV_A3;
     double tau_T = 300 * dt;
     double tau_P = 400 * dt;
-    int equib_time = 10000;
+    int equib_time = 50000;
     
     init_fcc(positions, n, lattice_param); 
     rand_fcc(positions, lattice_param, n_atoms);
@@ -220,8 +222,19 @@ void task3(void)
          positions[110][0], positions[110][1], positions[110][2],
          positions[125][0], positions[125][1], positions[125][2],
          msd, velcor); 
+
+        // Writing all positions and velocites to file.
+        for (int i = 0; i < n_atoms; i++)
+        {
+            fprintf(position_file, "%f,%f,%f,", positions[i][0],
+                positions[i][1], positions[i][2]);
+            fprintf(velocity_file, "%f,%f,%f,", velocities[i][0],
+                velocities[i][1], velocities[i][2]);
+        }
+        fprintf(position_file, "\n");
+        fprintf(velocity_file, "\n");
         
-        if (t % 50 == 0)
+        if (t % 500 == 0)
         {
             printf("Progress: %.1f%%, a = %f, p = %f, temp = %f\n", (t / (float) timesteps) * 100, lattice_param, pressure, temperature);
         }
@@ -230,6 +243,8 @@ void task3(void)
     destroy_2D_array(velocities);
     destroy_2D_array(force);
     fclose(file);
+    fclose(position_file);
+    fclose(velocity_file);
 }
 
 void task4(void)
