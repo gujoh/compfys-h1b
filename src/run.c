@@ -269,6 +269,8 @@ void task4(void)
     
     sprintf(buffer, "data/task4_%.1e.csv", dt);
     FILE* file = fopen(buffer, "w+");
+    FILE* position_file = fopen("data/task4_positions.csv", "w+");
+    FILE* velocity_file = fopen("data/task4_velocity.csv", "w+");
     
     double potential = 0;
     double virial = 0;
@@ -276,10 +278,10 @@ void task4(void)
     
     double T_eq = 1000 + 273.15;
     double P_eq = 1 * BAR_TO_EV_A3;
-    double tau_T = 300 * dt;
+    double tau_T = 200 * dt;
     double tau_P = 400 * dt;
-    int equib_time = 10000;
-    int equib_time2 = 20000;
+    int equib_time = 75000;
+    int equib_time2 = 85000;
     
     init_fcc(positions, n, lattice_param); 
     rand_fcc(positions, lattice_param, n_atoms);
@@ -324,7 +326,18 @@ void task4(void)
          positions[125][0], positions[125][1], positions[125][2],
          msd, velcor); 
         
-        if (t % 50 == 0)
+        // Writing all positions and velocites to file.
+        for (int i = 0; i < n_atoms; i++)
+        {
+            fprintf(position_file, "%f,%f,%f,", positions[i][0],
+                positions[i][1], positions[i][2]);
+            fprintf(velocity_file, "%f,%f,%f,", velocities[i][0],
+                velocities[i][1], velocities[i][2]);
+        }
+        fprintf(position_file, "\n");
+        fprintf(velocity_file, "\n");
+        
+        if (t % 500 == 0)
         {
             printf("Progress: %.1f%%, a = %f, p = %f, temp = %f\n", (t / (float) timesteps) * 100, lattice_param, pressure, temperature);
         }
@@ -333,6 +346,8 @@ void task4(void)
     destroy_2D_array(velocities);
     destroy_2D_array(force);
     fclose(file);
+    fclose(position_file);
+    fclose(velocity_file);
 }
 
 // Computes one step of the Velocity verlet integration scheme. 
